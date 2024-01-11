@@ -11,6 +11,7 @@
     <button type="button" onclick="initImageUpload()">Upload Image</button>
     <div id="webcam-container"></div>
     <div id="label-container"></div>
+    <div id="uploaded-image-container"></div>
     <input type="file" accept="image/*" id="image-upload" style="display: none;">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
@@ -40,9 +41,10 @@
             const metadataURL = URL + "metadata.json";
             model = await tmImage.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
-            webcam = null; // Reset webcam if it was previously used
-            document.getElementById("webcam-container").innerHTML = ''; // Clear webcam container
-            document.getElementById("label-container").innerHTML = ''; // Clear label container
+            webcam = null; 
+            document.getElementById("webcam-container").innerHTML = '';
+            document.getElementById("label-container").innerHTML = '';
+            document.getElementById("uploaded-image-container").innerHTML = '';
             labelContainer = document.getElementById("label-container");
             for (let i = 0; i < maxPredictions; i++) {
                 labelContainer.appendChild(document.createElement("div"));
@@ -63,7 +65,7 @@
                         canvas.width = 200;
                         canvas.height = 200;
                         ctx.drawImage(img, 0, 0, 200, 200);
-                        await predict(canvas);
+                        await predict(canvas, img);
                     };
                 };
                 reader.readAsDataURL(input.files[0]);
@@ -76,7 +78,7 @@
             window.requestAnimationFrame(loop);
         }
 
-        async function predict(canvas) {
+        async function predict(canvas, img) {
             const predictions = await model.predict(canvas || webcam.canvas);
             
             const maxIndex = predictions.reduce((maxIndex, prediction, currentIndex) => {
@@ -90,14 +92,15 @@
             labelContainer.childNodes[0].innerHTML = classPrediction;
 
             const logoImg = document.createElement('img');
-
             const brandName = predictions[maxIndex].className;
             logoImg.src = './logos/' + brandName + '.png';
-
             logoImg.style.width = 'auto';
             logoImg.style.height = '100px';
-
             labelContainer.childNodes[0].appendChild(logoImg);
+
+            const uploadedImageContainer = document.getElementById("uploaded-image-container");
+            uploadedImageContainer.innerHTML = '';
+            uploadedImageContainer.appendChild(img);
         }
     </script>
 </body>

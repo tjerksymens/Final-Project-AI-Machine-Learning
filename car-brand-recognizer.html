@@ -3,44 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Car Recognize | From Tjerk</title>
 </head>
 <body>
     <div>Teachable Machine Image Model</div>
-    <button type="button" onclick="init()">Start</button>
+    <button type="button" onclick="initWebcam()">Use Webcam</button>
+    <button type="button" onclick="initImageUpload()">Upload Image</button>
     <div id="webcam-container"></div>
     <div id="label-container"></div>
+    <input type="file" accept="image/*" id="image-upload" style="display: none;">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script type="text/javascript">
-        // the link to your model provided by Teachable Machine export panel
         const URL = "./car-model/";
-
         let model, webcam, labelContainer, maxPredictions;
 
-        // Load the image model and setup the webcam
-        async function init() {
+        async function initWebcam() {
             const modelURL = URL + "model.json";
             const metadataURL = URL + "metadata.json";
-
-            // load the model and metadata
             model = await tmImage.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
-
-            // Convenience function to setup a webcam
-            const flip = true; // whether to flip the webcam
-            webcam = new tmImage.Webcam(200, 200, flip); // width, height, flip
-            await webcam.setup(); // request access to the webcam
+            const flip = true;
+            webcam = new tmImage.Webcam(200, 200, flip);
+            await webcam.setup();
             await webcam.play();
             window.requestAnimationFrame(loop);
-
-            // append elements to the DOM
             document.getElementById("webcam-container").appendChild(webcam.canvas);
             labelContainer = document.getElementById("label-container");
-            for (let i = 0; i < maxPredictions; i++) { // and class labels
+            for (let i = 0; i < maxPredictions; i++) {
                 labelContainer.appendChild(document.createElement("div"));
             }
         }
+
+        async function initImageUpload() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+            webcam = null; // Reset webcam if it was previously used
+            document.getElementById("webcam-container").innerHTML = ''; // Clear webcam container
+            document.getElementById("label-container").innerHTML = ''; // Clear label container
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) {
+                labelContainer.appendChild(document.createElement("div"));
+            }
+            document.getElementById("image-upload").style.display = 'block';
+        }
+
+        document.getElementById("image-upload").addEventListener("change", async function () {
+            const input = this;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = async function () {
+                        const canvas = document.createElement("canvas");
+                        const ctx = canvas.getContext("2d");
+                        canvas.width = 200;
+                        canvas.height = 200;
+                        ctx.drawImage(img, 0, 0, 200, 200);
+                        await predict(canvas);
+                    };
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        });
 
         async function loop() {
             webcam.update();
@@ -48,8 +76,8 @@
             window.requestAnimationFrame(loop);
         }
 
-        async function predict() {
-            const prediction = await model.predict(webcam.canvas);
+        async function predict(canvas) {
+            const prediction = await model.predict(canvas || webcam.canvas);
             for (let i = 0; i < maxPredictions; i++) {
                 const classPrediction =
                     prediction[i].className + ": " + prediction[i].probability.toFixed(2);
@@ -57,6 +85,5 @@
             }
         }
     </script>
-
 </body>
 </html>

@@ -77,12 +77,17 @@
         }
 
         async function predict(canvas) {
-            const prediction = await model.predict(canvas || webcam.canvas);
-            for (let i = 0; i < maxPredictions; i++) {
-                const classPrediction =
-                    prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-                labelContainer.childNodes[i].innerHTML = classPrediction;
-            }
+            const predictions = await model.predict(canvas || webcam.canvas);
+            
+            const maxIndex = predictions.reduce((maxIndex, prediction, currentIndex) => {
+                return prediction.probability > predictions[maxIndex].probability ? currentIndex : maxIndex;
+            }, 0);
+
+            const certaintyStatement = "We are " + (predictions[maxIndex].probability * 100).toFixed(2) + "% certain that it is a";
+
+            const classPrediction =
+                certaintyStatement + " " + predictions[maxIndex].className;
+            labelContainer.childNodes[0].innerHTML = classPrediction;
         }
     </script>
 </body>

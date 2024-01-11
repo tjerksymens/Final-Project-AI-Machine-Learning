@@ -88,6 +88,16 @@
             const classPrediction =
                 certaintyStatement + " " + predictions[maxIndex].className;
             labelContainer.childNodes[0].innerHTML = classPrediction;
+
+            const logoImg = document.createElement('img');
+
+            const brandName = predictions[maxIndex].className;
+            logoImg.src = './logos/' + brandName + '.png';
+
+            logoImg.style.width = 'auto';
+            logoImg.style.height = '100px';
+
+            labelContainer.childNodes[0].appendChild(logoImg);
         }
     </script>
 </body>
